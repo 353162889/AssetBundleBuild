@@ -18,6 +18,12 @@ namespace EditorPackage
         public static void BuildAssetBundle(BuildTarget buildTarget,bool forceBuild)
         {
             ClearAssetBundleNames();
+            List<string> files = new List<string>();
+            PathTools.GetAllFiles(PathConfig.AssetsRootDir+"/ResourceEx", files, null, "*.*", SearchOption.AllDirectories, new List<string> { ".meta" });
+            for (int i = 0; i < files.Count; i++)
+            {
+                Debug.Log(files[i]);
+            }
         }
 
         private static void ClearAssetBundleNames()

@@ -32,14 +32,11 @@ namespace CustomizeEditor
                 case BuildTarget.iOS:
                     platform = IOS;
                     break;
-                case BuildTarget.StandaloneOSXUniversal:
+                case BuildTarget.StandaloneOSX:
                     platform = Mac;
                     break;
                 case BuildTarget.Android:
                     platform = Android;
-                    break;
-                case BuildTarget.WebPlayer:
-                    platform = WebPlayer;
                     break;
                 default:
                     break;

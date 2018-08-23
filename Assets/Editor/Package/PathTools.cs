@@ -20,7 +20,7 @@ namespace EditorPackage
             return path.Replace("\\", "/");
         }
 
-        public static void GetAllFiles(string dir, List<string> files, string ignoreDir = null,string searchPattern = "*.*",SearchOption searchOption = SearchOption.TopDirectoryOnly)
+        public static void GetAllFiles(string dir, List<string> files, string ignoreDir = null,string searchPattern = "*.*",SearchOption searchOption = SearchOption.TopDirectoryOnly, List<string> excludeExtensions = null)
         {
             if (!Directory.Exists(dir))
             {
@@ -29,7 +29,28 @@ namespace EditorPackage
             dir = UnityPath(dir);
             //获取所有文件
             string[] innerFiles = Directory.GetFiles(dir,searchPattern, SearchOption.TopDirectoryOnly);
-            files.AddRange(innerFiles);
+            if (innerFiles != null)
+            {
+                for (int i = 0; i < innerFiles.Length; i++)
+                {
+                    bool add = true;
+                    if (excludeExtensions != null)
+                    {
+                        for (int j = 0; j < excludeExtensions.Count; j++)
+                        {
+                            if(innerFiles[i].EndsWith(excludeExtensions[j]))
+                            {
+                                add = false;
+                                break;
+                            }
+                        }
+                    }
+                    if(add)
+                    {
+                        files.Add(UnityPath(innerFiles[i]));
+                    }
+                }
+            }
 
             if (searchOption == SearchOption.AllDirectories)
             {
@@ -39,7 +60,7 @@ namespace EditorPackage
                 {
                     if (string.IsNullOrEmpty(ignoreDir) || subdir != ignoreDir)
                     {
-                        GetAllFiles(subdir, files);
+                        GetAllFiles(subdir, files,ignoreDir,searchPattern,searchOption, excludeExtensions);
                     }
                 }
             }
@@ -153,7 +174,7 @@ namespace EditorPackage
         }
 
         //拷贝文件夹内容到新的文件夹下
-        public static void CopyTo(string from, string to,string searchPattern = "*.*", string excludeExtension = null)
+        public static void CopyTo(string from, string to,string searchPattern = "*.*", List<string> excludeExtensions = null)
         {
             if (Directory.Exists(from))
             {
@@ -168,9 +189,18 @@ namespace EditorPackage
 
                 for (int i = 0; i < files.Length; i++)
                 {
-                    if (!string.IsNullOrEmpty(excludeExtension) && files[i].EndsWith(excludeExtension))
+                    if(excludeExtensions != null)
                     {
-                        continue;
+                        bool isExcludeExtension = false;
+                        for (int j = 0; j < excludeExtensions.Count; j++)
+                        {
+                            if(files[i].EndsWith(excludeExtensions[j]))
+                            {
+                                isExcludeExtension = true;
+                                break;
+                            }
+                        }
+                        if (isExcludeExtension) continue;
                     }
                     string fileName = UnityPath(Path.GetFileName(files[i]));
                     File.Copy(UnityPath(files[i]), to + fileName, true);
@@ -184,26 +214,32 @@ namespace EditorPackage
                     if (index > -1)
                     {
                         string directoryName = tempDir.Substring(index + 1);
-                        CopyTo(UnityPath(directorys[i]), to + directoryName, excludeExtension);
+                        CopyTo(UnityPath(directorys[i]), to + directoryName, searchPattern,excludeExtensions);
                     }
                 }
             }
             else if (File.Exists(from))
             {
-                if (!string.IsNullOrEmpty(excludeExtension) && from.EndsWith(excludeExtension))
+                if (excludeExtensions != null)
                 {
-                    return;
+                    for (int j = 0; j < excludeExtensions.Count; j++)
+                    {
+                        if (from.EndsWith(excludeExtensions[j]))
+                        {
+                            return;
+                        }
+                    }
                 }
                 File.Copy(from, to, true);
             }
         }
 
         //更改文件夹下所有文件的扩展名
-        public static void RenameDirExtension(string path, string searchParttern, string extension)
+        public static void RenameExtensionInDirectory(string dir, string searchParttern, string extension)
         {
-            if (Directory.Exists(path))
+            if (Directory.Exists(dir))
             {
-                string[] files = Directory.GetFiles(path, searchParttern, SearchOption.AllDirectories);
+                string[] files = Directory.GetFiles(dir, searchParttern, SearchOption.AllDirectories);
                 foreach (var f in files)
                 {
                     string filePath = UnityPath(f);

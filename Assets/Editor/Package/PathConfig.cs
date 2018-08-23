@@ -34,7 +34,7 @@ namespace EditorPackage
         //项目根目录，Assets目录的上层目录
         public static string ProjectRootDir = ParentDir(AssetsRootDir, 1);
         //放置资源路径
-        public static string AssetRootDir = ChildDir(AssetsRootDir,"ResourceEx");
+        public static string ResourceRootDir = ChildDir(AssetsRootDir,"ResourceEx");
         //StreamingAsset目录，放置打包好的bundle
         public static string StreamingAssetDir = PathTools.UnityPath(Application.streamingAssetsPath);
 
