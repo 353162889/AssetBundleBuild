@@ -9,19 +9,23 @@ namespace EditorPackage
 {
     public enum AssetBundlePackingType
     {
+        //同样目录下打包优先级 Whole > SubDir > SingleFile
+        Whole = 0, 
         SubDir,
-        Whole,
         SingleFile,
     }
     public class AssetBundleBuildInfo
     {
         public string searchDirectory;
+        public string bundleNameExt;
         public AssetBundlePackingType packingType;
         public string searchPattern;
         public AssetBundleBuildInfo(XmlElement element)
         {
             searchDirectory = element.GetAttribute("searchDirectory").Replace("\\", "/");
             if (searchDirectory.EndsWith("/")) searchDirectory.Substring(0, searchDirectory.Length - 1);
+            bundleNameExt = element.GetAttribute("bundleNameExt");
+            if (string.IsNullOrEmpty(bundleNameExt)) bundleNameExt = "";
             packingType = (AssetBundlePackingType)Enum.Parse(typeof(AssetBundlePackingType), element.GetAttribute("packingType"));
             searchPattern = element.GetAttribute("searchPattern");
         }
@@ -56,8 +60,7 @@ namespace EditorPackage
         private static int Compare(AssetBundleBuildInfo a, AssetBundleBuildInfo b)
         {
             if (a.searchDirectory.Length != b.searchDirectory.Length) return b.searchDirectory.Length - a.searchDirectory.Length;
-            if (a.packingType != AssetBundlePackingType.Whole && b.packingType == AssetBundlePackingType.Whole) return 1;
-            return 0;
+            return (int)a.packingType - (int)b.packingType;
         }
     }
 }

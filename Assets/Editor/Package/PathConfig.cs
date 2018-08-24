@@ -11,18 +11,19 @@ namespace EditorPackage
     //ps:所有目录都最后都不带"/"
     public class PathConfig
     {
-        # region 文件后缀
-        public static string AssetBundleExt = ".assetbundle";
+        #region 常量文件配置
+        public static string AssetBundleManifestName = "assetbundle_manifest";
+        public static string assetPathMappingName = "assetpath_mapping";
         #endregion
 
         #region 平台目录路径
         public static Dictionary<BuildTarget, string> DicPlatformName = new Dictionary<BuildTarget, string> {
-            { BuildTarget.StandaloneWindows64, "Win32"},
+            { BuildTarget.StandaloneWindows, "Win32"},
             { BuildTarget.Android, "Android"},
             { BuildTarget.iOS, "iOS"},
         };
         public static Dictionary<BuildTarget, string> DicPlatformExt = new Dictionary<BuildTarget, string> {
-            { BuildTarget.StandaloneWindows64, ".exe"},
+            { BuildTarget.StandaloneWindows, ".exe"},
             { BuildTarget.Android, ".apk"},
             { BuildTarget.iOS, ".ipa"},
         };
@@ -30,13 +31,13 @@ namespace EditorPackage
         #endregion
 
         //Assets目录路径
-        public static string AssetsRootDir = ParentDir(PathTools.UnityPath(Application.dataPath),0);
+        public static string AssetsRootDir = ParentDir(PathTools.FormatPath(Application.dataPath),0);
         //项目根目录，Assets目录的上层目录
         public static string ProjectRootDir = ParentDir(AssetsRootDir, 1);
         //放置资源路径
         public static string ResourceRootDir = ChildDir(AssetsRootDir,"ResourceEx");
         //StreamingAsset目录，放置打包好的bundle
-        public static string StreamingAssetDir = PathTools.UnityPath(Application.streamingAssetsPath);
+        public static string StreamingAssetDir = PathTools.FormatPath(Application.streamingAssetsPath);
 
         #region AssetBundle路径（各种路径）
 

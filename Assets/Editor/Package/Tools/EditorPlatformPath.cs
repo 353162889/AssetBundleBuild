@@ -32,9 +32,6 @@ namespace CustomizeEditor
                 case BuildTarget.iOS:
                     platform = IOS;
                     break;
-                case BuildTarget.StandaloneOSX:
-                    platform = Mac;
-                    break;
                 case BuildTarget.Android:
                     platform = Android;
                     break;

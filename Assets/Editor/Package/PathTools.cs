@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using UnityEngine;
 
@@ -9,13 +10,48 @@ namespace EditorPackage
 {
     public static class PathTools
     {
-        public static string UnityAssetPath(string path)
+        /// <summary>
+        /// 产生MD5
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
+        public static string GetFileMD5(string path)
         {
-            path = UnityPath(path);
-            if (path.StartsWith("Assets")) return path;
-            return path.Replace(Application.dataPath, "Assets");
+            using (FileStream get_file = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+            {
+                MD5CryptoServiceProvider get_md5 = new MD5CryptoServiceProvider();
+                byte[] hash_byte = get_md5.ComputeHash(get_file);
+                get_file.Close();
+
+                string result = System.BitConverter.ToString(hash_byte);
+                result = result.Replace("-", "");
+                return result;
+            }
         }
-        public static string UnityPath(string path)
+
+        /// <summary>
+        /// 一般路径转换为unity资源加载路径
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
+        public static string PathToUnityAssetPath(string path)
+        {
+            path = FormatPath(path);
+            return path.Replace(FormatPath(Application.dataPath), "Assets");
+        }
+
+        /// <summary>
+        /// unity资源路径转换为一般路径
+        /// </summary>
+        /// <param name="assetPath"></param>
+        /// <returns></returns>
+        public static string UnityAssetPathToPath(string assetPath)
+        {
+            assetPath = FormatPath(assetPath);
+            return assetPath.Replace("Assets", FormatPath(Application.dataPath));
+        }
+
+        public static string FormatPath(string path)
         {
             return path.Replace("\\", "/");
         }
@@ -26,7 +62,7 @@ namespace EditorPackage
             {
                 return;
             }
-            dir = UnityPath(dir);
+            dir = FormatPath(dir);
             //获取所有文件
             string[] innerFiles = Directory.GetFiles(dir,searchPattern, SearchOption.TopDirectoryOnly);
             if (innerFiles != null)
@@ -47,7 +83,7 @@ namespace EditorPackage
                     }
                     if(add)
                     {
-                        files.Add(UnityPath(innerFiles[i]));
+                        files.Add(FormatPath(innerFiles[i]));
                     }
                 }
             }
@@ -66,9 +102,51 @@ namespace EditorPackage
             }
         }
 
+        public static void GetDirectories(string dir,List<string> dirs, string searchPattern = "*", SearchOption searchOption = SearchOption.TopDirectoryOnly)
+        {
+            if (!Directory.Exists(dir))
+            {
+                return;
+            }
+            dir = FormatPath(dir);
+            string[] innerDirs = Directory.GetDirectories(dir, searchPattern, searchOption);
+            if (innerDirs != null)
+            {
+                for (int i = 0; i < innerDirs.Length; i++)
+                {
+                    string resultDir = FormatPath(innerDirs[i]);
+                    if (resultDir.EndsWith("/")) resultDir = resultDir.Substring(0, resultDir.Length - 1);
+                    dirs.Add(resultDir);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 通过文件路径获取不带后缀的路径
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
+        public static string GetFilePathWithoutExt(string path)
+        {
+            path = FormatPath(path);
+            if (!File.Exists(path))
+            {
+                Debug.LogError("路径:" + path + "不是一个文件");
+                return "";
+            }
+            path = path.Substring(0, path.LastIndexOf("."));
+            return path;
+        }
+
+        /// <summary>
+        /// 通过路径获取文件名称
+        /// </summary>
+        /// <param name="path">路径</param>
+        /// <param name="includeExt">是否包括后缀</param>
+        /// <returns></returns>
         public static string GetFileNameForPath(string path,bool includeExt)
         {
-            path = UnityPath(path);
+            path = FormatPath(path);
             if(!File.Exists(path))
             {
                 Debug.LogError("路径:"+path+"不是一个文件");
@@ -86,7 +164,11 @@ namespace EditorPackage
             }
             return file;
         }
-
+        /// <summary>
+        /// 获取文件后缀
+        /// </summary>
+        /// <param name="file">文件名</param>
+        /// <returns></returns>
         public static string GetFileExt(string file)
         {
             string ext = "";
@@ -98,15 +180,24 @@ namespace EditorPackage
             return ext;
         }
 
+        /// <summary>
+        /// 获取路径获取文件后缀
+        /// </summary>
+        /// <param name="path">路径</param>
+        /// <returns></returns>
         public static string GetFileExtForPath(string path)
         {
             string fileName = GetFileNameForPath(path,true);
             return GetFileExt(fileName);
         }
-
+        /// <summary>
+        /// 通过路径获取文件目录
+        /// </summary>
+        /// <param name="path">路径</param>
+        /// <returns></returns>
         public static string GetFileDirForPath(string path)
         {
-            path = UnityPath(path);
+            path = FormatPath(path);
             if (path.EndsWith("/")) path = path.Substring(0, path.Length - 1);
             if(Directory.Exists(path))
             {
@@ -120,6 +211,14 @@ namespace EditorPackage
             return path;
         }
 
+        /// <summary>
+        /// 将文件夹下所有文件拷贝到另一个文件中
+        /// </summary>
+        /// <param name="from"></param>
+        /// <param name="to"></param>
+        /// <param name="searchParttern"></param>
+        /// <param name="extension"></param>
+        /// <param name="movedFiles"></param>
         public static void CopyToRenameExtension(string from, string to, string searchParttern, string extension, List<string> movedFiles = null)
         {
             if (Directory.Exists(from))
@@ -128,7 +227,7 @@ namespace EditorPackage
                 {
                     Directory.CreateDirectory(to);
                 }
-                to = UnityPath(to);
+                to = FormatPath(to);
 
                 if (to[to.Length - 1] != '/')
                     to = to + "/";
@@ -136,19 +235,19 @@ namespace EditorPackage
 
                 for (int i = 0; i < files.Length; i++)
                 {
-                    string fileName = UnityPath(Path.GetFileName(files[i]));
+                    string fileName = FormatPath(Path.GetFileName(files[i]));
                     CopyAndRenameExtension(files[i], to + fileName, extension, movedFiles);
                 }
 
                 string[] directorys = Directory.GetDirectories(from);
                 for (int i = 0; i < directorys.Length; i++)
                 {
-                    string tempDir = UnityPath(directorys[i]);
+                    string tempDir = FormatPath(directorys[i]);
                     int index = tempDir.LastIndexOf("/");
                     if (index > -1)
                     {
                         string directoryName = tempDir.Substring(index + 1);
-                        CopyToRenameExtension(UnityPath(directorys[i]), to + directoryName, searchParttern, extension, movedFiles);
+                        CopyToRenameExtension(FormatPath(directorys[i]), to + directoryName, searchParttern, extension, movedFiles);
                     }
                 }
             }
@@ -160,7 +259,7 @@ namespace EditorPackage
 
         private static void CopyAndRenameExtension(string src, string desc, string extension, List<string> movedFiles = null)
         {
-            desc = UnityPath(desc);
+            desc = FormatPath(desc);
             int index = desc.LastIndexOf(".");
             if (index > -1)
             {
@@ -182,7 +281,7 @@ namespace EditorPackage
                 {
                     Directory.CreateDirectory(to);
                 }
-                to = UnityPath(to);
+                to = FormatPath(to);
                 if (to[to.Length - 1] != '/')
                     to = to + "/";
                 string[] files = Directory.GetFiles(from, searchPattern);
@@ -202,19 +301,19 @@ namespace EditorPackage
                         }
                         if (isExcludeExtension) continue;
                     }
-                    string fileName = UnityPath(Path.GetFileName(files[i]));
-                    File.Copy(UnityPath(files[i]), to + fileName, true);
+                    string fileName = FormatPath(Path.GetFileName(files[i]));
+                    File.Copy(FormatPath(files[i]), to + fileName, true);
                 }
 
                 string[] directorys = Directory.GetDirectories(from);
                 for (int i = 0; i < directorys.Length; i++)
                 {
-                    string tempDir = UnityPath(directorys[i]);
+                    string tempDir = FormatPath(directorys[i]);
                     int index = tempDir.LastIndexOf("/");
                     if (index > -1)
                     {
                         string directoryName = tempDir.Substring(index + 1);
-                        CopyTo(UnityPath(directorys[i]), to + directoryName, searchPattern,excludeExtensions);
+                        CopyTo(FormatPath(directorys[i]), to + directoryName, searchPattern,excludeExtensions);
                     }
                 }
             }
@@ -242,7 +341,7 @@ namespace EditorPackage
                 string[] files = Directory.GetFiles(dir, searchParttern, SearchOption.AllDirectories);
                 foreach (var f in files)
                 {
-                    string filePath = UnityPath(f);
+                    string filePath = FormatPath(f);
                     RenameFileExtension(filePath, extension);
                 }
             }
@@ -270,10 +369,10 @@ namespace EditorPackage
             {
                 return;
             }
-            string[] files = Directory.GetFiles(dirPath, "*.*", SearchOption.AllDirectories);
+            string[] files = Directory.GetFiles(dirPath, "*", SearchOption.AllDirectories);
             foreach (var path in files)
             {
-                string filePath = UnityPath(path);
+                string filePath = FormatPath(path);
                 File.Delete(filePath);
             }
             RemoveEmptyDir(dirPath);
@@ -281,11 +380,12 @@ namespace EditorPackage
 
         public static void RemoveEmptyDir(string dirPath)
         {
+            if (!Directory.Exists(dirPath)) return;
             foreach (string path in Directory.GetDirectories(dirPath))
             {
                 RemoveEmptyDir(path);
             }
-            if (Directory.GetDirectories(dirPath).Length == 0 && Directory.GetFiles(dirPath, "*.*").Length == 0)
+            if (Directory.GetDirectories(dirPath).Length == 0 && Directory.GetFiles(dirPath, "*").Length == 0)
             {
                 Directory.Delete(dirPath, true);
             }
